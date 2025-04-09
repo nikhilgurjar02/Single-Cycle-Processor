@@ -4,6 +4,7 @@ module alu_main #(parameter data_width = 32)(
     input [2:0] op_select, // which operation to be done selected by controller
     input [data_width - 1 : 0] operand_a, // it will be always coming from rs of register file
     input [data_width - 1 :0] operand_b, // rt of R-Type , offset of lw,sw and rt for beq of I Type
+    input [4:0] shamt, //Shift amount for R-type shift_left_logical operation       
     output reg [data_width - 1 :0] result,
     output zero // Used in branch statement beq to compare if they are equal
     );
@@ -14,6 +15,7 @@ always@(*) begin
         3'b001: result = operand_a | operand_b ;
         3'b010: result = operand_a + operand_b ;
         3'b110: result = operand_a - operand_b ;
+        3'b011: result = operand_b << shamt ; //sll shift rd register value by shamt store in rd 
         3'b111: begin
                 if(operand_a < operand_b)
                     result = 1'b1;

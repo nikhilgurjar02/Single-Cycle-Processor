@@ -34,8 +34,10 @@ wire MemWrite; //If we want to write data set 1 i.e In case of StoreWord
 wire ALUsrc;  //Decide if Operand_2 will be a register or Offset(i.e 15:0 bits of Instruction)
 wire RegWrite;    //Write enable for writing in Register File
 wire [1:0] ALUop;
+//wire jump_reg; //IF Jumpreg Instruction set 1, Used by mux to update PC with address stored in register
+wire lui; //If Load Upper Immediate then load immediate into register instead of Memory or ALU result data
 
-Control controller(.opcode(opcode),.RegDst(RegDst),.jump(jump),.branch(branch),.MemRead(MemRead),.MemtoReg(MemtoReg),.MemWrite(MemWrite),.ALUsrc(ALUsrc),.RegWrite(RegWrite),.ALUop(ALUop));
+Control controller(.opcode(opcode),.RegDst(RegDst),.jump(jump),.branch(branch),.MemRead(MemRead),.MemtoReg(MemtoReg),.MemWrite(MemWrite),.ALUsrc(ALUsrc),.RegWrite(RegWrite),.lui(lui),.ALUop(ALUop));
 
 wire [address_width - 1 : 0] reg1_addr;  ///rs of R-type Instruction
 wire [address_width - 1 : 0] reg2_addr;  ///rt of R-type Instruction
@@ -49,14 +51,18 @@ assign reg1_addr = instruction[25:21];
 assign reg2_addr = instruction[20:16];
 assign reg3_addr = (RegDst == 1'b0) ? instruction[20:16] : instruction[15:11] ;
 wire [data_width -1 : 0] MemtoReg_data;         //////****connect this later with MUX and Data Memory***** 
-assign write_data = MemtoReg_data;
+
+assign write_data = (lui == 1'b1) ? {instruction[15:0],16'b0} : MemtoReg_data; //MUX deciding if load upper immediate in lui or write memtoreg data from memory or aluresult
 
 wire [2:0] op_select; // which operation to be done selected by controller
 wire [data_width - 1 : 0] operand_a; // it will be always coming from rs of register file
 wire [data_width - 1 :0] operand_b; // rt of R-Type , offset of lw,sw and rt for beq of I Type
+wire [4:0] shamt; //Shift amount for R-type shift_left_logical operation 
 wire [data_width - 1 :0] result;
 wire zero; // Used in branch statement beq to compare if they are equal
-alu_main alu_op(.op_select(op_select),.operand_a(operand_a),.operand_b(operand_b),.result(result),.zero(zero));
+
+assign shamt = instruction[10:6] ; //Connecting shamt directly to ALU
+alu_main alu_op(.op_select(op_select),.operand_a(operand_a),.operand_b(operand_b),.shamt(shamt),.result(result),.zero(zero));
 
 assign operand_a = reg1_dataout;
 
@@ -77,7 +83,8 @@ assign MemtoReg_data = (MemtoReg == 1'b1) ? read_data : result;
 
 wire [5:0] r_type_function;
 assign r_type_function = instruction[5:0];
-ALU_Control alu_op_control(.ALUop(ALUop),.func(r_type_function),.op_select(op_select));
+wire jump_reg;
+ALU_Control alu_op_control(.ALUop(ALUop),.func(r_type_function),.op_select(op_select),.jump_reg(jump_reg));
 
 wire [27:0] j_type_shift_left;
 assign j_type_shift_left = {instruction[25:0], 2'b00};
@@ -89,12 +96,15 @@ assign branch_shift_left_addr = {sign_ext_data[29:0],2'b00};
 wire [31:0] pc_branch_addr;
 assign pc_branch_addr = pc_four + branch_shift_left_addr;
 
-wire branch_type_check;
+wire branch_type_check;     //Checking if Instruction is Branch address and If operands are equal
 assign branch_type_check = zero & branch;
 
-wire [31:0] branch_add_or_pc_four;
+wire [31:0] branch_add_or_pc_four;          //Branch address or PC+4 address needs to be sent to PC is checked by MUX
 assign branch_add_or_pc_four = (branch_type_check == 1'b1) ? pc_branch_addr : pc_four;
 
-assign next_pc_address = (jump == 1'b1) ? pc_jump_addr : (rst == 1'b0) ? branch_add_or_pc_four : 32'd0 ;
+wire [31:0] jump_addr_or_other;             //Checking if Jump address or other(either Branch or PC4) address need to be sent to PC by MUX
+assign jump_addr_or_other = (jump == 1'b1) ? pc_jump_addr : (rst == 1'b0) ? branch_add_or_pc_four : 32'd0 ;
 
+//Checking if Jump_Reg address(address from register) needs to be sent or Jump address_or_other(Either jump address or Branch or PC+4 address) by MUX
+assign next_pc_address = (jump_reg == 1'b1) ? result : (rst == 1'b0) ? jump_addr_or_other : 32'd0 ;        
 endmodule
