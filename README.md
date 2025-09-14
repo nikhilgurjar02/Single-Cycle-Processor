@@ -1,7 +1,5 @@
 # Single-Cycle-Processor
 
-# Single-Cycle Processor
-
 ## Encoding Scheme
 - **R-type**: `opcode(6)` — `rs(5)` — `rt(5)` — `rd(5)` — `shamt(5)` — `funct(6)`  
 - **I-type**: `opcode(6)` — `rs(5)` — `rt(5)` — `immediate(16)`  
@@ -63,12 +61,13 @@
 ### J-type
 - **j**: `000010`  
 
-
+---
 
 
 
 Below is the Architecture used in my Single Cycle Processor
 ![alt text](https://github.com/nikhilgurjar02/Single-Cycle-Processor/blob/main/MIPS_Edited1.png?raw=true)
+
 
 
 
