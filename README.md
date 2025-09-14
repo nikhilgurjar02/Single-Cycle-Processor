@@ -64,9 +64,13 @@
 ---
 
 
-
 Below is the Architecture used in my Single Cycle Processor
-![alt text](https://github.com/nikhilgurjar02/Single-Cycle-Processor/blob/main/MIPS_Edited1.png?raw=true)
+<p align="center">
+  <img src="https://github.com/nikhilgurjar02/Single-Cycle-Processor/blob/main/MIPS_Edited1.png?raw=true" width="600">
+</p>
+
+
+
 
 
 
